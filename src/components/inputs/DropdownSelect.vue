@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import chevronIcon from '@/assets/icons/chevron.svg?raw'
 
 interface Props {
   label?: string
@@ -130,6 +131,16 @@ watch(inputValue, (val) => {
   }
 })
 
+// 부모가 modelValue를 외부에서 바꾸면(예: Reset 버튼) 내부 상태도 동기화
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (value === inputValue.value) return
+    inputValue.value = value ?? ''
+    selectedValue.value = value || null
+  },
+)
+
 function handleClickOutside(e: MouseEvent) {
   if (wrapperRef.value && !wrapperRef.value.contains(e.target as Node)) {
     closeDropdown()
@@ -178,7 +189,7 @@ onBeforeUnmount(() => {
         aria-label="toggle dropdown"
         @click.stop="toggleDropdown"
       >
-        <img src="@/assets/icons/chevron-down.svg" alt="" class="select-box__chevron-icon" />
+        <span class="select-box__chevron-icon" v-html="chevronIcon"></span>
       </button>
 
       <Transition name="dropdown">
@@ -224,7 +235,7 @@ $hover-bg: #f2f2f2;
   display: flex;
   align-items: center;
   width: 320px;
-  height: 42px;
+  height: 44px;
   padding: 0 16px;
   border: 1px solid $color-border;
   border-radius: $radius-sm;
@@ -265,18 +276,18 @@ $hover-bg: #f2f2f2;
     background: transparent;
     color: $text-color;
     cursor: pointer;
-    transform: rotate(0deg);
+    transform: rotate(90deg);
     transition: transform 0.2s ease;
 
     &--open {
-      transform: rotate(180deg);
+      transform: rotate(-90deg);
     }
   }
 
   &__chevron-icon {
+    display: flex;
     width: 20px;
     height: 20px;
-    display: block;
   }
 }
 

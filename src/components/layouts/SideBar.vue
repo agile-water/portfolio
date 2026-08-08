@@ -4,8 +4,8 @@
     <div class="gvis-sidebar__logo">
       <span class="gvis-sidebar__logo-icon" v-html="icons.brandmark"></span>
       <div class="gvis-sidebar__logo-text-group" v-show="!isCollapsed">
-        <span class="gvis-sidebar__logo-text">GVIS</span>
-        <span class="gvis-sidebar__logo-caption">GLOVIS VISIBILITY SYSTEM</span>
+        <span class="gvis-sidebar__logo-text">PartTrace</span>
+        <span class="gvis-sidebar__logo-caption">PART LOGISTICS TRACKING</span>
       </div>
     </div>
 
@@ -26,7 +26,7 @@
             v-show="!isCollapsed"
             class="gvis-menu__chevron"
             :class="{ 'gvis-menu__chevron--open': expandedSections[section.id] }"
-            v-html="icons.chevronDown"
+            v-html="icons.chevron"
           ></span>
         </button>
 
@@ -52,7 +52,7 @@
           <span class="gvis-account__title">Account</span>
           <span class="gvis-account__email">{{ userEmail }}</span>
         </span>
-        <span class="gvis-account__chevron" v-html="icons.chevronRight"></span>
+        <span class="gvis-account__chevron" v-html="icons.chevron"></span>
       </button>
 
       <button type="button" class="gvis-footer-btn">
@@ -80,33 +80,33 @@
     >
       <span
         class="gvis-collapse-btn__icon"
-        v-html="isCollapsed ? icons.chevronRight : icons.chevronLeft"
+        :class="{ 'gvis-collapse-btn__icon--collapsed': isCollapsed }"
+        v-html="icons.chevron"
       ></span>
     </button>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-interface SubMenuItem {
-  id: string
-  label: string
-}
-
-interface MenuSection {
-  id: string
-  label: string
-  icon: string
-  children: SubMenuItem[]
-}
+import { menuSections, routeNameOf } from '@/config/navigation'
+import inventoryStatusIcon from '@/assets/icons/inventory-status.svg?raw'
+import logisticsTrackingIcon from '@/assets/icons/logistics-tracking.svg?raw'
+import dataAnalysisIcon from '@/assets/icons/data-analysis.svg?raw'
+import dataMonitoringIcon from '@/assets/icons/data-monitoring.svg?raw'
+import settingsIcon from '@/assets/icons/settings.svg?raw'
+import announcementsIcon from '@/assets/icons/announcements.svg?raw'
+import logoutIcon from '@/assets/icons/logout.svg?raw'
+import chevronIcon from '@/assets/icons/chevron.svg?raw'
 
 interface Props {
   userEmail?: string
 }
 
 withDefaults(defineProps<Props>(), {
-  userEmail: 'insoo.kim@glovis.net',
+  userEmail: 'agile.h2o@gmail.com',
 })
 
 const emit = defineEmits<{
@@ -128,104 +128,20 @@ const icons: Record<string, string> = {
     <circle cx="20" cy="20" r="3.2" fill="#ffffff"/>
     <circle cx="28" cy="14.4" r="2.1" fill="#ffffff"/>
   </svg>`,
-  monitor: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="4.5" width="18" height="12" rx="1.6" stroke="currentColor" stroke-width="1.8"/>
-    <path d="M8.5 20.5H15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M12 16.5V20.5" stroke="currentColor" stroke-width="1.8"/>
-    <path d="M6.5 8.5H12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-    <path d="M6.5 11.5H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-  </svg>`,
-  logistics: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20 8.5A8 8 0 0 0 6.2 5.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M6.2 5.3 5.4 8.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M6.2 5.3 9.5 6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M4 15.5A8 8 0 0 0 17.8 18.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M17.8 18.7 18.6 15.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M17.8 18.7 14.5 17.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
-  chart: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3.5" y="3.5" width="17" height="17" rx="1.6" stroke="currentColor" stroke-width="1.8"/>
-    <path d="M7.5 15.5V13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M12 15.5V9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M16.5 15.5V11.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-  </svg>`,
-  document: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6.5 3.5H14L18 7.5V20.5H6.5V3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-    <path d="M14 3.5V7.5H18" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-    <path d="M9 12H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-    <path d="M9 15.5H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-  </svg>`,
-  chevronDown: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6 9.5 12 15.5 18 9.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
-  chevronRight: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M9.5 6 15.5 12 9.5 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
-  chevronLeft: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M14.5 6 8.5 12 14.5 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
-  settings: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
-    <path d="M19.4 13.4a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V19.5a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H4.5a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H10.5a1.65 1.65 0 0 0 1-1.51V4.5a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V10.5a1.65 1.65 0 0 0 1.51 1H19.5a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-  </svg>`,
-  announcement: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3.5 10.5V14.5H6.5L12.5 18V7L6.5 10.5H3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-    <path d="M16.5 9.5A3.5 3.5 0 0 1 16.5 15.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-    <path d="M18.7 7A6.5 6.5 0 0 1 18.7 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-  </svg>`,
-  logout: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M15.5 8V6.5A2.5 2.5 0 0 0 13 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20H13a2.5 2.5 0 0 0 2.5-2.5V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M9.5 12H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M17.5 8 21 12l-3.5 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
+  monitor: inventoryStatusIcon,
+  logistics: logisticsTrackingIcon,
+  chart: dataAnalysisIcon,
+  document: dataMonitoringIcon,
+  chevron: chevronIcon,
+  settings: settingsIcon,
+  announcement: announcementsIcon,
+  logout: logoutIcon,
 }
 
-/* -------------------------------- Menu data -------------------------------- */
-const menuSections: MenuSection[] = [
-  {
-    id: 'inventory-status',
-    label: 'Inventory Status',
-    icon: 'monitor',
-    children: [
-      { id: 'overview', label: 'Overview' },
-      { id: 'shipping-detail', label: 'Shipping Detail' },
-      { id: 'cc-inventory-detail', label: 'C/C Inventory Detail' },
-    ],
-  },
-  {
-    id: 'logistics-tracking',
-    label: 'Losistics Tracking',
-    icon: 'logistics',
-    children: [
-      { id: 'vessel-monitoring', label: 'Vessel Monitoring' },
-      { id: 'cargo-tracking', label: 'Cargo Tracking' },
-    ],
-  },
-  {
-    id: 'data-analysis',
-    label: 'Data Analysis',
-    icon: 'chart',
-    children: [
-      { id: 'eta-accuracy', label: 'ETA Accuracy' },
-      { id: 'lead-time-analysis', label: 'Lead Time Analysis' },
-      { id: 'volume-analysis', label: 'Volume Analysis' },
-      { id: 'pipeline-inventory-status', label: 'Pipeline Inventory S...' },
-    ],
-  },
-  {
-    id: 'data-monitoring',
-    label: 'Data Monitoring',
-    icon: 'document',
-    children: [
-      { id: 'completeness', label: 'Completeness' },
-      { id: 'consistency', label: 'Consistency' },
-      { id: 'input-rate', label: 'Input Rate' },
-      { id: 'abnormality', label: 'Abnormality' },
-    ],
-  },
-]
-
 /* --------------------------------- State ---------------------------------- */
+const route = useRoute()
+const router = useRouter()
+
 const expandedSections = reactive<Record<string, boolean>>(
   menuSections.reduce(
     (acc, section) => {
@@ -236,8 +152,8 @@ const expandedSections = reactive<Record<string, boolean>>(
   ),
 )
 
-const activeSectionId = ref<string>('inventory-status')
-const activeItemId = ref<string>('overview')
+const activeSectionId = computed<string>(() => (route.meta.sectionId as string) ?? '')
+const activeItemId = computed<string>(() => (route.meta.itemId as string) ?? '')
 const isCollapsed = ref<boolean>(false)
 
 /* -------------------------------- Methods ---------------------------------- */
@@ -249,9 +165,8 @@ function toggleSection(sectionId: string): void {
 }
 
 function selectItem(sectionId: string, itemId: string): void {
-  activeSectionId.value = sectionId
-  activeItemId.value = itemId
   expandedSections[sectionId] = true
+  router.push({ name: routeNameOf(sectionId, itemId) })
   emit('select', { sectionId, itemId })
 }
 
@@ -290,7 +205,7 @@ $color-bg-soft: #f4f6f8;
 .gvis-sidebar__logo {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: $spacing-sm;
   padding: 0 4px;
   margin-bottom: $spacing-sm;
 }
@@ -369,7 +284,7 @@ $color-bg-soft: #f4f6f8;
     color 0.15s ease;
 
   &:hover:not(&--active) {
-    background: $color-bg-soft;
+    background: $color-bg-muted;
   }
 
   &--active {
@@ -403,11 +318,11 @@ $color-bg-soft: #f4f6f8;
   width: $icon-size-sm;
   height: $icon-size-sm;
   flex-shrink: 0;
-  transform: rotate(-90deg);
+  transform: rotate(0deg);
   transition: transform 0.2s ease;
 
   &--open {
-    transform: rotate(0deg);
+    transform: rotate(90deg);
   }
 }
 
@@ -581,5 +496,11 @@ $color-bg-soft: #f4f6f8;
   display: flex;
   width: $icon-size-sm;
   height: $icon-size-sm;
+  transform: rotate(180deg);
+  transition: transform 0.2s ease;
+
+  &--collapsed {
+    transform: rotate(0deg);
+  }
 }
 </style>

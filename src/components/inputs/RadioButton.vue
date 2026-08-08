@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
 
 interface RadioOption {
   label: string
@@ -33,15 +33,22 @@ interface RadioOption {
 interface Props {
   label: string
   options: RadioOption[]
+  modelValue?: string
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: '',
+})
 
-// 1. 디폴트 선택은 첫 번째 옵션(button1)
-const selected = ref(props.options[0]?.value ?? '')
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
+
+// modelValue를 안 넘기면 첫 번째 옵션을 기본 선택으로 표시
+const selected = computed(() => props.modelValue || (props.options[0]?.value ?? ''))
 
 function selectOption(value: string): void {
-  selected.value = value
+  emit('update:modelValue', value)
 }
 </script>
 
@@ -50,8 +57,6 @@ function selectOption(value: string): void {
   display: inline-flex;
   align-items: center;
   gap: $spacing-md;
-  padding: 32px 40px;
-  background: $color-bg;
 
   &__label {
     width: fit-content;
@@ -86,6 +91,7 @@ function selectOption(value: string): void {
     height: 20px;
     border-radius: 50%;
     border: 1px solid $color-border;
+    background: $color-bg;
     box-sizing: border-box;
     position: relative;
     flex-shrink: 0;

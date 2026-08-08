@@ -1,6 +1,6 @@
 <template>
   <div class="search-box-wrapper">
-    <span class="search-box-wrapper__label">Label</span>
+    <span class="search-box-wrapper__label">{{ label }}</span>
 
     <div class="search-box-wrapper__box" @click="focusInput">
       <input
@@ -8,7 +8,7 @@
         v-model="searchText"
         type="text"
         class="search-box-wrapper__input"
-        placeholder="placeholder"
+        :placeholder="placeholder"
         @focus="handleFocus"
         @paste="handlePaste"
       />
@@ -27,13 +27,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
-import searchIcon from '../icons/search.svg'
-import SearchModal from './SearchModal.vue'
+import { ref, nextTick, watch } from 'vue'
+import searchIcon from '@/assets/icons/search.svg'
+import SearchModal from '@/components/modals/SearchModal.vue'
 
-const searchText = ref('')
+interface Props {
+  label?: string
+  placeholder?: string
+  modelValue?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  label: 'Label',
+  placeholder: 'placeholder',
+  modelValue: '',
+})
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
+
+const searchText = ref(props.modelValue)
 const inputRef = ref<HTMLInputElement | null>(null)
 const isModalOpen = ref(false)
+
+// 부모(v-model)에서 값이 바뀌면 내부 상태에 반영
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (value !== searchText.value) searchText.value = value
+  },
+)
+
+// 내부 상태가 바뀌면 부모로 알림
+watch(searchText, (value) => {
+  emit('update:modelValue', value)
+})
 
 // ★ 신규 추가: 서치박스 여백 클릭 시 input에 focus 위임
 function focusInput() {
@@ -110,6 +139,7 @@ $box-radius: 8px;
     justify-content: space-between;
     flex: 1;
     min-width: 280px;
+    height: 44px;
     border: 1px solid $color-border;
     border-radius: $radius-sm;
     padding: 10px 14px;
