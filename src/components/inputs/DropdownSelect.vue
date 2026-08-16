@@ -7,6 +7,14 @@ interface Props {
   placeholder?: string
   options?: string[]
   modelValue?: string
+  /** 라벨 영역 너비를 고정하고 싶을 때 (예: '100px') */
+  labelWidth?: string
+  /** 라벨 텍스트 정렬 */
+  labelAlign?: 'left' | 'right'
+  /** false면 타이핑으로 목록을 필터링하는 자동완성을 끄고, 클릭해서 목록만 고르게 합니다. */
+  searchable?: boolean
+  /** 입력 박스 너비를 덮어쓰고 싶을 때 (예: '420px'). 기본은 $field-width-select */
+  width?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -14,6 +22,10 @@ const props = withDefaults(defineProps<Props>(), {
   placeholder: 'placeholder',
   options: () => ['list1', 'list2', 'list3', 'list4'],
   modelValue: '',
+  labelWidth: undefined,
+  labelAlign: 'left',
+  searchable: true,
+  width: undefined,
 })
 
 const emit = defineEmits<{
@@ -159,12 +171,18 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="select-field">
-    <span class="select-field__label">{{ label }}</span>
+    <span
+      v-if="label"
+      class="select-field__label"
+      :style="{ width: labelWidth, textAlign: labelAlign, flexShrink: labelWidth ? 0 : undefined }"
+      >{{ label }}</span
+    >
 
     <div
       ref="wrapperRef"
       class="select-box"
-      :class="{ 'select-box--active': isFocused || isOpen }"
+      :class="{ 'select-box--active': isFocused || isOpen, 'select-box--readonly': !searchable }"
+      :style="{ width }"
       @click="handleBoxClick"
     >
       <input
@@ -173,6 +191,7 @@ onBeforeUnmount(() => {
         class="select-box__input"
         type="text"
         :placeholder="placeholder"
+        :readonly="!searchable"
         autocomplete="off"
         spellcheck="false"
         @focus="handleFocus"
@@ -192,6 +211,8 @@ onBeforeUnmount(() => {
         <span class="select-box__chevron-icon" v-html="chevronIcon"></span>
       </button>
 
+      <slot name="suffix" />
+
       <Transition name="dropdown">
         <ul v-if="isOpen" class="select-list">
           <li v-if="filteredOptions.length === 0" class="select-list__empty">
@@ -204,6 +225,7 @@ onBeforeUnmount(() => {
             :class="{ 'select-list__item--highlighted': highlightedIndex === index }"
             @mouseenter="highlightedIndex = index"
             @mousedown.prevent="selectOption(option)"
+            @click.stop
           >
             {{ option }}
           </li>
@@ -220,7 +242,7 @@ $hover-bg: #f2f2f2;
 .select-field {
   display: flex;
   align-items: center;
-  gap: $spacing-md;
+  gap: $spacing-sm;
 
   &__label {
     font-weight: 700;
@@ -234,7 +256,7 @@ $hover-bg: #f2f2f2;
   position: relative;
   display: flex;
   align-items: center;
-  width: 320px;
+  width: $field-width-select;
   height: 44px;
   padding: 0 16px;
   border: 1px solid $color-border;
@@ -247,6 +269,15 @@ $hover-bg: #f2f2f2;
 
   &--active {
     border-color: $color-primary;
+  }
+
+  &--readonly {
+    cursor: pointer;
+
+    .select-box__input {
+      cursor: pointer;
+      caret-color: transparent;
+    }
   }
 
   &__input {

@@ -87,7 +87,7 @@ const processSteps: ProcessFlowStep[] = [
 /* -------------------------------- Data table ------------------------------- */
 // TODO: 실제 데이터 연동 시 tableRows를 API 응답으로 교체
 const tableColumns: DataTableColumn[] = [
-  { id: 'no', label: 'NO', hasMenu: false },
+  { id: 'no', label: 'NO', hasMenu: false, hasFilter: false },
   { id: 'customer', label: 'Customer' },
   { id: 'pn', label: 'P/N' },
   { id: 'pname', label: 'P/NAME' },

@@ -1,2 +1,18 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Pretendard', sans-serif; color: #1a1a1a; }
+
+/* 표/리스트의 숫자형 데이터는 항상 우측 정렬합니다.
+   text-align은 일반 텍스트에, justify-content는 flex로 짜인 셀에 함께 대응합니다. */
+.text-numeric {
+  text-align: right;
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 값을 누르면 드릴다운 등으로 이어지는 하이퍼링크 스타일 텍스트.
+   신호등(상태 dot) 같은 별도 색상 요소는 이 규칙의 영향을 받지 않습니다(색상은 background로 지정되어 있음). */
+.link-text {
+  color: $color-primary;
+  text-decoration: underline;
+  cursor: pointer;
+}

@@ -1,6 +1,9 @@
 <template>
   <header class="page-header">
     <h1 class="page-header__title">{{ resolvedTitle }}</h1>
+    <div v-if="$slots.actions" class="page-header__actions">
+      <slot name="actions" />
+    </div>
   </header>
 </template>
 
@@ -25,10 +28,24 @@ const resolvedTitle = computed(
 </script>
 
 <style scoped lang="scss">
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+}
+
 .page-header__title {
   margin: 0;
   font-size: $font-size-xl;
   font-weight: $font-weight-extrabold;
   color: $color-text;
+}
+
+.page-header__actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: $spacing-sm;
 }
 </style>

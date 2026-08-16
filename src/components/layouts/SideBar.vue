@@ -2,7 +2,7 @@
   <aside class="gvis-sidebar" :class="{ 'gvis-sidebar--collapsed': isCollapsed }">
     <!-- Logo -->
     <div class="gvis-sidebar__logo">
-      <span class="gvis-sidebar__logo-icon" v-html="icons.brandmark"></span>
+      <img :src="logoImage" alt="PartTrace logo" class="gvis-sidebar__logo-icon" />
       <div class="gvis-sidebar__logo-text-group" v-show="!isCollapsed">
         <span class="gvis-sidebar__logo-text">PartTrace</span>
         <span class="gvis-sidebar__logo-caption">PART LOGISTICS TRACKING</span>
@@ -46,8 +46,8 @@
     </nav>
 
     <!-- Footer -->
-    <div class="gvis-sidebar__footer" v-show="!isCollapsed">
-      <button type="button" class="gvis-account">
+    <div class="gvis-sidebar__footer">
+      <button type="button" class="gvis-account" v-show="!isCollapsed">
         <span class="gvis-account__text">
           <span class="gvis-account__title">Account</span>
           <span class="gvis-account__email">{{ userEmail }}</span>
@@ -57,16 +57,16 @@
 
       <button type="button" class="gvis-footer-btn">
         <span class="gvis-footer-btn__icon" v-html="icons.settings"></span>
-        <span>Settings</span>
+        <span v-show="!isCollapsed">Settings</span>
       </button>
 
       <button type="button" class="gvis-footer-btn">
         <span class="gvis-footer-btn__icon" v-html="icons.announcement"></span>
-        <span>Announcements</span>
+        <span v-show="!isCollapsed">Announcements</span>
       </button>
 
       <button type="button" class="gvis-logout" @click="onLogout">
-        <span>Logout</span>
+        <span v-show="!isCollapsed">Logout</span>
         <span class="gvis-logout__icon" v-html="icons.logout"></span>
       </button>
     </div>
@@ -92,6 +92,7 @@ import { computed, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { menuSections, routeNameOf } from '@/config/navigation'
+import logoImage from '@/assets/logo.png'
 import inventoryStatusIcon from '@/assets/icons/inventory-status.svg?raw'
 import logisticsTrackingIcon from '@/assets/icons/logistics-tracking.svg?raw'
 import dataAnalysisIcon from '@/assets/icons/data-analysis.svg?raw'
@@ -116,18 +117,6 @@ const emit = defineEmits<{
 
 /* ---------------------------------- Icons ---------------------------------- */
 const icons: Record<string, string> = {
-  brandmark: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="gvisLogoGrad" x1="4" y1="4" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-        <stop offset="0" stop-color="#3fa2ff"/>
-        <stop offset="1" stop-color="#0058d6"/>
-      </linearGradient>
-    </defs>
-    <rect x="1" y="1" width="38" height="38" rx="11" fill="url(#gvisLogoGrad)"/>
-    <circle cx="20" cy="20" r="9" stroke="#ffffff" stroke-width="1.6" stroke-opacity="0.5"/>
-    <circle cx="20" cy="20" r="3.2" fill="#ffffff"/>
-    <circle cx="28" cy="14.4" r="2.1" fill="#ffffff"/>
-  </svg>`,
   monitor: inventoryStatusIcon,
   logistics: logisticsTrackingIcon,
   chart: dataAnalysisIcon,
@@ -184,6 +173,7 @@ $color-bg-soft: #f4f6f8;
 
 .gvis-sidebar {
   position: relative;
+  z-index: 50;
   display: flex;
   flex-direction: column;
   width: 320px;
@@ -211,16 +201,11 @@ $color-bg-soft: #f4f6f8;
 }
 
 .gvis-sidebar__logo-icon {
-  display: flex;
-  width: $icon-size-xl;
-  height: $icon-size-xl;
+  display: block;
+  width: auto;
+  height: $icon-size-2xl;
   flex-shrink: 0;
-  border-radius: 11px;
-  box-shadow: 0 6px 14px rgba(0, 122, 255, 0.28);
-
-  :deep(svg) {
-    display: block;
-  }
+  object-fit: contain;
 }
 
 .gvis-sidebar__logo-text-group {
@@ -466,6 +451,20 @@ $color-bg-soft: #f4f6f8;
   display: flex;
   width: $icon-size-sm;
   height: $icon-size-sm;
+}
+
+/* Collapsed footer */
+.gvis-sidebar--collapsed {
+  .gvis-footer-btn {
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .gvis-logout {
+    justify-content: center;
+    align-self: center;
+    padding: 8px;
+  }
 }
 
 /* Collapse toggle */

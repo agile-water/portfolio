@@ -1,11 +1,16 @@
 <template>
   <div class="data-table">
     <div class="data-table__toolbar">
-      <p class="data-table__total">
-        Total <span class="data-table__total-count">{{ rows.length }}</span> Row(s)
-      </p>
+      <div class="data-table__toolbar-left">
+        <p class="data-table__total">
+          Total <span class="data-table__total-count">{{ rows.length }}</span> Row(s)
+        </p>
+        <slot name="toolbar-left" />
+      </div>
       <div class="data-table__toolbar-actions">
-        <ExcelExportDropdown :data="rows" file-name="data-table" />
+        <slot v-if="exportable" name="export">
+          <ExcelExportDropdown :data="rows" file-name="data-table" />
+        </slot>
         <slot name="actions" />
       </div>
     </div>
@@ -14,6 +19,15 @@
       <table class="data-table__table">
         <thead>
           <tr>
+            <th v-if="selectable" rowspan="3" class="data-table__th data-table__th--checkbox">
+              <input
+                type="checkbox"
+                class="data-table__checkbox"
+                aria-label="전체 선택"
+                :checked="isAllSelected"
+                @change="toggleSelectAll"
+              />
+            </th>
             <th
               v-for="column in columns"
               :key="column.id"
@@ -32,6 +46,9 @@
                   <span v-html="moreIcon"></span>
                 </button>
               </span>
+            </th>
+            <th v-if="showAddColumn" rowspan="3" class="data-table__th data-table__th--add">
+              <IconButton :icon="addIcon" label="열 추가" size="sm" tone="muted" @click="emit('add-column')" />
             </th>
           </tr>
           <tr>
@@ -61,7 +78,7 @@
               :key="`${column.id}-filter`"
               class="data-table__filter-cell"
             >
-              <span class="data-table__filter-box">
+              <span v-if="column.hasFilter !== false" class="data-table__filter-box">
                 <input type="text" class="data-table__filter-input" />
                 <span class="data-table__filter-icon" v-html="filterIcon"></span>
               </span>
@@ -70,15 +87,37 @@
         </thead>
 
         <tbody v-if="rows.length">
-          <tr v-for="(row, index) in rows" :key="index">
-            <td v-for="column in leafColumns" :key="column.id" class="data-table__td">
-              {{ row[column.id] }}
+          <tr
+            v-for="(row, index) in rows"
+            :key="index"
+            :class="[
+              { 'data-table__tr--selected': selectable && isRowSelected(row, index) },
+              rowClass?.(row, index),
+            ]"
+          >
+            <td v-if="selectable" class="data-table__td data-table__td--checkbox">
+              <input
+                type="checkbox"
+                class="data-table__checkbox"
+                :aria-label="`${index + 1}번째 행 선택`"
+                :checked="isRowSelected(row, index)"
+                @change="toggleRow(row, index)"
+              />
             </td>
+            <td v-for="column in leafColumns" :key="column.id" class="data-table__td">
+              <slot :name="`cell-${column.id}`" :row="row" :value="row[column.id]">
+                {{ row[column.id] }}
+              </slot>
+            </td>
+            <td v-if="showAddColumn" class="data-table__td data-table__td--add"></td>
           </tr>
         </tbody>
         <tbody v-else>
           <tr>
-            <td :colspan="leafColumns.length" class="data-table__empty">
+            <td
+              :colspan="leafColumns.length + (selectable ? 1 : 0) + (showAddColumn ? 1 : 0)"
+              class="data-table__empty"
+            >
               <slot name="empty">
                 <EmptyState :message="emptyMessage" />
               </slot>
@@ -95,11 +134,15 @@ import { computed } from 'vue'
 
 import EmptyState from '@/components/feedback/EmptyState.vue'
 import ExcelExportDropdown from '../buttons/ExcelExportDropdown.vue'
+import IconButton from '../buttons/IconButton.vue'
+import addIcon from '@/assets/icons/add.svg?raw'
 
 export interface DataTableLeafColumn {
   id: string
   label: string
   hasMenu?: boolean
+  /** false면 해당 컬럼의 필터 입력창을 숨깁니다. (예: NO처럼 필터링 의미가 없는 컬럼) */
+  hasFilter?: boolean
 }
 
 export interface DataTableColumn extends DataTableLeafColumn {
@@ -110,16 +153,67 @@ interface Props {
   columns: DataTableColumn[]
   rows?: Record<string, unknown>[]
   emptyMessage?: string
+  /** true면 각 행 앞에 체크박스 컬럼을 표시하고 행 선택을 지원합니다. */
+  selectable?: boolean
+  /** 선택된 행의 key 목록 (v-model:selected). rowKey를 지정하면 해당 필드 값, 아니면 행 index를 사용합니다. */
+  selected?: (string | number)[]
+  /** 행을 식별할 필드명. 지정하지 않으면 배열 index로 선택 상태를 관리합니다. */
+  rowKey?: string
+  /** false면 기본 Export 버튼(ExcelExportDropdown)과 #export 슬롯을 아예 표시하지 않습니다. */
+  exportable?: boolean
+  /** 행마다 추가로 적용할 클래스명을 반환합니다. (예: 경고/위험 행 배경 강조) */
+  rowClass?: (row: Record<string, unknown>, index: number) => string | undefined
+  /** true면 헤더 맨 끝에 컬럼 추가(+) 버튼을 표시합니다. */
+  showAddColumn?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   rows: () => [],
   emptyMessage: 'No results found.',
+  selectable: false,
+  selected: () => [],
+  rowKey: undefined,
+  exportable: true,
+  rowClass: undefined,
+  showAddColumn: false,
 })
+
+const emit = defineEmits<{
+  (e: 'update:selected', value: (string | number)[]): void
+  (e: 'add-column'): void
+}>()
 
 const leafColumns = computed<DataTableLeafColumn[]>(() =>
   props.columns.flatMap((column) => column.children ?? [column]),
 )
+
+function rowKeyOf(row: Record<string, unknown>, index: number): string | number {
+  if (props.rowKey && row[props.rowKey] !== undefined) {
+    return row[props.rowKey] as string | number
+  }
+  return index
+}
+
+function isRowSelected(row: Record<string, unknown>, index: number): boolean {
+  return props.selected.includes(rowKeyOf(row, index))
+}
+
+const isAllSelected = computed(
+  () => props.rows.length > 0 && props.rows.every((row, index) => isRowSelected(row, index)),
+)
+
+function toggleRow(row: Record<string, unknown>, index: number): void {
+  const key = rowKeyOf(row, index)
+  const next = isRowSelected(row, index)
+    ? props.selected.filter((selectedKey) => selectedKey !== key)
+    : [...props.selected, key]
+  emit('update:selected', next)
+}
+
+function toggleSelectAll(): void {
+  const next = isAllSelected.value ? [] : props.rows.map((row, index) => rowKeyOf(row, index))
+  emit('update:selected', next)
+}
 
 const moreIcon = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
   <circle cx="12" cy="5" r="1.6" fill="currentColor"/>
@@ -148,10 +242,18 @@ const filterIcon = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.or
   gap: $spacing-md;
 }
 
+.data-table__toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  min-width: 0;
+}
+
 .data-table__total {
   margin: 0;
   font-size: $font-size-sm;
   color: $color-text;
+  white-space: nowrap;
 }
 
 .data-table__total-count {
@@ -271,6 +373,31 @@ const filterIcon = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.or
   background: $color-bg;
   font-size: $font-size-sm;
   color: $color-text;
+}
+
+.data-table__th--checkbox,
+.data-table__td--checkbox {
+  width: 44px;
+  padding: 10px;
+  text-align: center;
+}
+
+.data-table__checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: $color-text;
+  cursor: pointer;
+}
+
+.data-table__tr--selected .data-table__td {
+  background: $color-bg-muted;
+}
+
+.data-table__th--add,
+.data-table__td--add {
+  width: 44px;
+  padding: 6px;
+  text-align: center;
 }
 
 .data-table__empty {

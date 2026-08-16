@@ -1,6 +1,10 @@
 <template>
   <div class="search-box-wrapper">
-    <span class="search-box-wrapper__label">{{ label }}</span>
+    <span
+      class="search-box-wrapper__label"
+      :style="{ width: labelWidth, textAlign: labelAlign, flexShrink: labelWidth ? 0 : undefined }"
+      >{{ label }}</span
+    >
 
     <div class="search-box-wrapper__box" @click="focusInput">
       <input
@@ -35,12 +39,18 @@ interface Props {
   label?: string
   placeholder?: string
   modelValue?: string
+  /** 라벨 영역 너비를 고정하고 싶을 때 (예: '100px') */
+  labelWidth?: string
+  /** 라벨 텍스트 정렬 */
+  labelAlign?: 'left' | 'right'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   label: 'Label',
   placeholder: 'placeholder',
   modelValue: '',
+  labelWidth: undefined,
+  labelAlign: 'left',
 })
 
 const emit = defineEmits<{
@@ -124,7 +134,7 @@ $box-radius: 8px;
 .search-box-wrapper {
   display: flex;
   align-items: center;
-  gap: $spacing-md;
+  gap: $spacing-sm;
 
   &__label {
     font-weight: 700;
@@ -137,8 +147,7 @@ $box-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex: 1;
-    min-width: 280px;
+    width: $field-width-select;
     height: 44px;
     border: 1px solid $color-border;
     border-radius: $radius-sm;
